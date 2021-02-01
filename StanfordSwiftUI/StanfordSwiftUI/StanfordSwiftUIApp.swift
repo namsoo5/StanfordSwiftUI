@@ -11,8 +11,9 @@ import SwiftUI
 struct StanfordSwiftUIApp: App {
     var body: some Scene {
         WindowGroup {
-            let game = EmojiMemoryGame()
-            EmojiMemoryGameView(viewModel: game)
+//            let game = EmojiMemoryGame()
+//            EmojiMemoryGameView(viewModel: game)
+            TestView()
         }
     }
 }

@@ -10,10 +10,24 @@ import SwiftUI
 // ViewModel
 class EmojiArtDocument: ObservableObject {
     static let palette: String = "⭐️🍎🏀🥨🌎"
-    
-    @Published private var emojiArt: EmojiArt = EmojiArt()
+    private static let untitled = "EmojiArtDocument.untitled"
+    // @Published
+    private var emojiArt: EmojiArt {
+        willSet {
+            objectWillChange.send()
+        }
+        didSet {
+            print(emojiArt.json?.utf8)
+            UserDefaults.standard.set(emojiArt.json, forKey: EmojiArtDocument.untitled)
+        }
+    }
     @Published private(set) var backgroundImage: UIImage?
     var emojis: [EmojiArt.Emoji] { emojiArt.emojis }
+    
+    init() {
+        emojiArt = EmojiArt(json: UserDefaults.standard.data(forKey: EmojiArtDocument.untitled)) ?? EmojiArt()
+        fetchBackgroundImageData()
+    }
     
     // MARK: - Intent(s)
     
@@ -45,7 +59,7 @@ class EmojiArtDocument: ObservableObject {
             DispatchQueue.global(qos: .userInitiated).async {
                 if let imageData = try? Data(contentsOf: url) {
                     DispatchQueue.main.async {
-                        if url != self.emojiArt.backgroundURL {
+                        if url == self.emojiArt.backgroundURL {
                             self.backgroundImage = UIImage(data: imageData)
                         }
                     }

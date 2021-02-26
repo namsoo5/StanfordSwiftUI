@@ -6,26 +6,24 @@
 //
 
 import SwiftUI
+import Combine
 
 // ViewModel
 class EmojiArtDocument: ObservableObject {
     static let palette: String = "⭐️🍎🏀🥨🌎"
     private static let untitled = "EmojiArtDocument.untitled"
-    // @Published
-    private var emojiArt: EmojiArt {
-        willSet {
-            objectWillChange.send()
-        }
-        didSet {
-            print(emojiArt.json?.utf8)
-            UserDefaults.standard.set(emojiArt.json, forKey: EmojiArtDocument.untitled)
-        }
-    }
+    
+    @Published private var emojiArt: EmojiArt
     @Published private(set) var backgroundImage: UIImage?
     var emojis: [EmojiArt.Emoji] { emojiArt.emojis }
+    private var autoSaveCancellabel: AnyCancellable?
+    private var fetchImageCancellabel: AnyCancellable?
     
     init() {
         emojiArt = EmojiArt(json: UserDefaults.standard.data(forKey: EmojiArtDocument.untitled)) ?? EmojiArt()
+        autoSaveCancellabel =  $emojiArt.sink { emojiArt in
+            UserDefaults.standard.set(emojiArt.json, forKey: EmojiArtDocument.untitled)
+        }
         fetchBackgroundImageData()
     }
     
@@ -48,23 +46,25 @@ class EmojiArtDocument: ObservableObject {
         }
     }
     
-    func setBackgroundURL(_ url: URL?) {
-        emojiArt.backgroundURL = url?.imageURL
-        fetchBackgroundImageData()
+    var backgroundURL: URL? {
+        get {
+            emojiArt.backgroundURL
+        }
+        set {
+            emojiArt.backgroundURL = newValue?.imageURL
+            fetchBackgroundImageData()
+        }
     }
     
     private func fetchBackgroundImageData() {
         backgroundImage = nil
         if let url = self.emojiArt.backgroundURL {
-            DispatchQueue.global(qos: .userInitiated).async {
-                if let imageData = try? Data(contentsOf: url) {
-                    DispatchQueue.main.async {
-                        if url == self.emojiArt.backgroundURL {
-                            self.backgroundImage = UIImage(data: imageData)
-                        }
-                    }
-                }
-            }
+            fetchImageCancellabel?.cancel() // 서버가 느린경우 새로운 이미지 로드시 이전꺼 취소
+            fetchImageCancellabel = URLSession.shared.dataTaskPublisher(for: url)
+                .map { data, urlResponse in UIImage(data: data) }
+                .receive(on: DispatchQueue.main)
+                .replaceError(with: nil)
+                .assign(to: \.backgroundImage, on: self)
         }
     }
 }

@@ -13,6 +13,8 @@ import Combine
 // and @Publishes a list of FAFlight objects from FlightAware API
 // that matches that criteria
 
+/* 코어 데이터 사용으로 인한 삭제 */
+/*
 class FlightFetcher: ObservableObject // struct
 {
     // create a FlightFetcher with certain search criteria ...
@@ -64,3 +66,5 @@ class FlightFetcher: ObservableObject // struct
     private(set) var flightAwareRequest: EnrouteRequest!
     private var flightAwareResultsCancellable: AnyCancellable?
 }
+
+ */

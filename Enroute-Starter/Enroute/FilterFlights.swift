@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import MapKit
 
 struct FilterFlights: View {
     @FetchRequest(fetchRequest: Airport.fetchRequest(.all)) var airports: FetchedResults<Airport>
@@ -17,6 +18,18 @@ struct FilterFlights: View {
     
     @State private var draft: FlightSearch
     
+    var destination: Binding<MKAnnotation?> {
+        return Binding<MKAnnotation?>(
+            get: { draft.destination },
+            set: {
+                if let aiport = $0 as? Airport {
+                    draft.destination = aiport
+                    
+                }
+            }
+        )
+    }
+    
     init(flightSearch: Binding<FlightSearch>, isPresented: Binding<Bool>) {
         _flightSearch = flightSearch
         _isPresented = isPresented
@@ -26,26 +39,32 @@ struct FilterFlights: View {
     var body: some View {
         NavigationView {
             Form {
-                // selection과 tag의 타입이 일치해야함
-                Picker("Destination", selection: $draft.destination) {
-                    ForEach(airports.sorted(), id: \.self) { airport in
-                        Text("\(airport.friendlyName)").tag(airport)
+                Section {
+                    // selection과 tag의 타입이 일치해야함
+                    Picker("Destination", selection: $draft.destination) {
+                        ForEach(airports.sorted(), id: \.self) { airport in
+                            Text("\(airport.friendlyName)").tag(airport)
+                        }
                     }
+                    MapView(annotations: airports.sorted(), selection: destination)
+                        .frame(minHeight: 400)
                 }
-                Picker("Origin", selection: $draft.origin) {
-                    Text("Any").tag(Airport?.none)
-                    ForEach(airports.sorted(), id: \.self) { (airport: Airport?) in
-                        Text("\(airport?.friendlyName ?? "Any")").tag(airport)
+                Section {
+                    Picker("Origin", selection: $draft.origin) {
+                        Text("Any").tag(Airport?.none)
+                        ForEach(airports.sorted(), id: \.self) { (airport: Airport?) in
+                            Text("\(airport?.friendlyName ?? "Any")").tag(airport)
+                        }
                     }
-                }
-                Picker("Airline", selection: $draft.airline) {
-                    Text("Any").tag(String?.none)
-                    ForEach(airlines.sorted(), id: \.self) { (airline: Airline?) in
-                        Text("\(airline?.friendlyName ?? "Any")").tag(airline)
+                    Picker("Airline", selection: $draft.airline) {
+                        Text("Any").tag(String?.none)
+                        ForEach(airlines.sorted(), id: \.self) { (airline: Airline?) in
+                            Text("\(airline?.friendlyName ?? "Any")").tag(airline)
+                        }
                     }
-                }
-                Toggle(isOn: $draft.inTheAir) {
-                    Text("Enroute Only")
+                    Toggle(isOn: $draft.inTheAir) {
+                        Text("Enroute Only")
+                    }
                 }
             }
             .navigationBarTitle("Filter Flights")

@@ -84,7 +84,7 @@ struct EmojiArtDocumentView: View {
                 }
                 
             }
-            .navigationBarItems(trailing: Button(action: {
+            .navigationBarItems(leading: self.pickImage, trailing: Button(action: {
                 if let url = UIPasteboard.general.url, url != self.document.backgroundURL {
                     self.comfirmBackgroundPaste = true
                 } else {
@@ -111,6 +111,33 @@ struct EmojiArtDocumentView: View {
             )
         }
     }
+    @State private var showImagePicker = false
+    @State private var imagePickerSourceType = UIImagePickerController.SourceType.photoLibrary
+    
+    private var pickImage: some View {
+        HStack {
+            Image(systemName: "photo").imageScale(.large).foregroundColor(.accentColor).onTapGesture {
+                self.showImagePicker = true
+                self.imagePickerSourceType = .photoLibrary
+            }
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Image(systemName: "camera").imageScale(.large).foregroundColor(.accentColor).onTapGesture {
+                    self.showImagePicker = true
+                    self.imagePickerSourceType = .camera
+                }
+            }
+        }.sheet(isPresented: $showImagePicker) {
+            ImagePicker(sourceType: self.imagePickerSourceType) { image in
+                if image != nil {
+                    DispatchQueue.main.async {
+                        self.document.backgroundURL = image?.storeInFilesystem()
+                    }
+                }
+                self.showImagePicker = false
+            }
+        }
+    }
+    
     @State private var explainBackgroundPaste = false
     @State private var comfirmBackgroundPaste = false
     
